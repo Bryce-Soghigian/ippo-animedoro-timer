@@ -502,7 +502,8 @@
   if(digitsWrap) digitsWrap.addEventListener('mouseleave', ()=>{ if(editing) exitEdit(true); });
   // show hint briefly on hover/first load
   let hintShown=false;
-  digits.addEventListener('mouseenter', ()=>{ if(!hintShown && !editing){ digitsHint.classList.add('show'); hintShown=true; setTimeout(()=>digitsHint.classList.remove('show'), 1800); }});
+  const hoverTarget = digitsWrap || digitsMM || digits;
+  if(hoverTarget) hoverTarget.addEventListener('mouseenter', ()=>{ if(!hintShown && !editing){ digitsHint.classList.add('show'); hintShown=true; setTimeout(()=>digitsHint.classList.remove('show'), 1800); }});
 
   // mode tabs — manual switch
   workTab.addEventListener('click', ()=>{
