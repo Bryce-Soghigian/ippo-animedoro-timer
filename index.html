@@ -278,6 +278,7 @@
   let roundsCompleted=0, currentRound=1;
   let running=false, timerId=null, endAt=null, pausedRemaining=null;
   let editing=false;
+  let lastExitAt=0;
 
   workInput.value=state.work; relaxInput.value=state.relax;
   autoStart.checked=state.autoStart; soundOn.checked=state.sound; notifyOn.checked=state.notify;
@@ -455,6 +456,7 @@
   // inline edit: click MM, type 50 -> updates to 50:00 with no popup, no box — edit in place, position locked
   function enterEdit(){
     if(editing) return;
+    if(Date.now() - lastExitAt < 350) return;
     if(running) pause();
     editing=true;
     if(digitsMM) digitsMM.style.visibility='hidden';
@@ -480,6 +482,7 @@
       }
     }
     editing=false;
+    lastExitAt = Date.now();
     digitsInput.style.display='none';
     if(digitsMM) digitsMM.style.visibility='visible';
     if(digitsHint) digitsHint.style.opacity='';
