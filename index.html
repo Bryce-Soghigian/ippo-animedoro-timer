@@ -66,6 +66,26 @@
     font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.62);font-weight:700;opacity:0;transition:opacity .2s;
   }
   .digits:hover + .digits-hint, .digits-hint.show{ opacity:1; }
+  .digits-input{
+    font-variant-numeric:tabular-nums;
+    font-weight:900;
+    font-size:clamp(84px, 18vw, 148px);
+    line-height:.9;
+    letter-spacing:-.05em;
+    color:#fff;
+    background:rgba(0,0,0,.38);
+    border:2px solid rgba(255,255,255,.38);
+    border-radius:16px;
+    padding:6px 18px;
+    text-align:center;
+    width:340px;
+    max-width:86vw;
+    backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+    outline:none;
+    text-shadow:0 8px 32px rgba(0,0,0,.45);
+    display:none;
+  }
+  .digits-input:focus{ border-color:rgba(255,255,255,.72); background:rgba(0,0,0,.52); }
 
   .controls-row{ margin-top:22px; display:flex;gap:12px;align-items:center;justify-content:center }
   .start-pill{
@@ -162,8 +182,9 @@
     <button class="pill active" id="workTab">📚 Work</button>
     <button class="pill outline" id="watchTab">📺 Watch</button>
   </div>
-  <div class="digits" id="digits" title="Click to edit time">40:00</div>
-  <div class="digits-hint" id="digitsHint">click time to edit split</div>
+  <div class="digits" id="digits" title="Click to type — no menu">40:00</div>
+  <input class="digits-input" id="digitsInput" type="text" inputmode="numeric" autocomplete="off" aria-label="Type minutes" placeholder="50">
+  <div class="digits-hint" id="digitsHint">click time to type — no menu</div>
   <div class="controls-row">
     <button class="start-pill" id="startBtn">Start</button>
     <button class="icon-btn" id="resetBtn" aria-label="Reset" title="Reset (R)">
@@ -398,12 +419,52 @@
   settingsBtn.addEventListener('click', openModal);
   closeBtn.addEventListener('click', closeModal);
   modal.addEventListener('click', e=>{ if(e.target===modal) closeModal(); });
-  digits.addEventListener('click', openModal);
-  // also allow tapping the hint
-  digitsHint.addEventListener('click', openModal);
+  // inline edit: click time, type 50 -> updates to 50:00 with no menu
+  const digitsInput=$('#digitsInput');
+  let editing=false;
+  function enterEdit(){
+    if(editing) return;
+    if(running) pause();
+    editing=true;
+    digits.style.display='none';
+    digitsHint.style.display='none';
+    digitsInput.style.display='block';
+    const cur = mode==='work' ? state.work : state.relax;
+    digitsInput.value = String(cur);
+    digitsInput.focus();
+    digitsInput.select();
+  }
+  function exitEdit(commit){
+    if(!editing) return;
+    if(commit){
+      const raw = digitsInput.value.trim();
+      // allow "50", "50:00", "50m" — extract leading number
+      const m = parseInt(raw, 10);
+      if(!isNaN(m)){
+        const max = mode==='work' ? 120 : 60;
+        const v = clamp(m, 1, max);
+        if(mode==='work') workInput.value = v;
+        else relaxInput.value = v;
+        syncTotals();
+        updateSplitPreview();
+      }
+    }
+    editing=false;
+    digitsInput.style.display='none';
+    digits.style.display='block';
+    digitsHint.style.display='block';
+    render();
+  }
+  digits.addEventListener('click', enterEdit);
+  digitsHint.addEventListener('click', enterEdit);
+  digitsInput.addEventListener('blur', ()=> exitEdit(true));
+  digitsInput.addEventListener('keydown', e=>{
+    if(e.key==='Enter'){ e.preventDefault(); exitEdit(true); }
+    if(e.key==='Escape'){ e.preventDefault(); exitEdit(false); }
+  });
   // show hint briefly on hover/first load
   let hintShown=false;
-  digits.addEventListener('mouseenter', ()=>{ if(!hintShown){ digitsHint.classList.add('show'); hintShown=true; setTimeout(()=>digitsHint.classList.remove('show'), 1800); }});
+  digits.addEventListener('mouseenter', ()=>{ if(!hintShown && !editing){ digitsHint.classList.add('show'); hintShown=true; setTimeout(()=>digitsHint.classList.remove('show'), 1800); }});
 
   // mode tabs — manual switch
   workTab.addEventListener('click', ()=>{
