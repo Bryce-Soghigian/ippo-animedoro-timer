@@ -196,7 +196,7 @@
   </div>
 </main>
 
-<div class="footer-link">Gifs: Hajime no Ippo on <a href="https://tenor.com/search/hajime-no-ippo-gifs" target="_blank" rel="noopener">Tenor</a> — click time to change split</div>
+<div class="footer-link" id="footerTotal">Total: 0.0h worked — click time to change split</div>
 
 <div class="modal" id="modal" aria-hidden="true">
   <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
@@ -260,13 +260,14 @@
   const autoStart=$('#autoStart'), soundOn=$('#soundOn'), notifyOn=$('#notifyOn'), notifyPermBtn=$('#notifyPermBtn');
   const workUrl=$('#workUrl'), relaxUrl=$('#relaxUrl');
   const themeSelect=$('#themeSelect');
+  const footerTotal=$('#footerTotal');
   const modal=$('#modal'), closeBtn=$('#closeBtn');
   const LS_KEY='animedoro-ippo-v3';
   const THEMES={
     ippo:{ label:'🥊 Ippo', work:'assets/work.gif', relax:'assets/relax.gif', workFallback:'https://c.tenor.com/esQzZcKf6FwAAAAC/dempsey-roll.gif', relaxFallback:'https://c.tenor.com/dhiZs4RULI0AAAAC/ippo-hajime-no-ippo.gif' },
     initiald:{ label:'🏎️ Initial D', work:'assets/initiald-work.gif', relax:'assets/initiald-relax.gif', workFallback:'https://c.tenor.com/8I_13j-yo0UAAAAC/initiald-car.gif', relaxFallback:'https://c.tenor.com/1osmNTdrmukAAAAC/eurobeat-driving.gif' }
   };
-  const DEFAULTS={theme:'ippo', work:40, relax:20, autoStart:true, sound:true, notify:true, workUrl:'', relaxUrl:''};
+  const DEFAULTS={theme:'ippo', work:40, relax:20, autoStart:true, sound:true, notify:true, workUrl:'', relaxUrl:'', totalWorkSec:0, totalBreakSec:0};
   let state=load();
   // migrate v2 -> v3
   if(!state.theme){
@@ -283,14 +284,37 @@
   workUrl.value=state.workUrl||''; relaxUrl.value=state.relaxUrl||'';
   themeSelect.value=state.theme||'ippo';
   applyTheme(state.theme||'ippo');
-  applyPresetActive(); applyThemeActive(); render();
+  applyPresetActive(); applyThemeActive(); render(); updateFooterTotal();
 
   function load(){ try{ const v=JSON.parse(localStorage.getItem(LS_KEY)||'null'); return {...DEFAULTS, ...(v||{})}; }catch{ return {...DEFAULTS}; } }
   function save(){
     const curTheme = themeSelect?.value || state.theme || 'ippo';
-    state={ theme: curTheme, work:clamp(+workInput.value||40,1,120), relax:clamp(+relaxInput.value||20,1,60), autoStart:autoStart.checked, sound:soundOn.checked, notify:notifyOn.checked, workUrl:workUrl.value.trim(), relaxUrl:relaxUrl.value.trim() };
+    state={ theme: curTheme, work:clamp(+workInput.value||40,1,120), relax:clamp(+relaxInput.value||20,1,60), autoStart:autoStart.checked, sound:soundOn.checked, notify:notifyOn.checked, workUrl:workUrl.value.trim(), relaxUrl:relaxUrl.value.trim(), totalWorkSec: state.totalWorkSec||0, totalBreakSec: state.totalBreakSec||0 };
     localStorage.setItem(LS_KEY, JSON.stringify(state));
+    updateFooterTotal();
   }
+  function updateFooterTotal(){
+    const workSec = state.totalWorkSec||0;
+    const breakSec = state.totalBreakSec||0;
+    const totalSec = workSec + breakSec;
+    const hours = (workSec/3600).toFixed(1);
+    if(footerTotal){
+      footerTotal.textContent = `Total: ${hours}h worked — click time to change split`;
+      footerTotal.title = `${Math.floor(workSec/60)}m work + ${Math.floor(breakSec/60)}m watch • ${Math.floor(totalSec/60)}m total • resets only if you clear site data`;
+    }
+  }
+  let totalTicker=null;
+  function startTotalTicker(){
+    if(totalTicker) clearInterval(totalTicker);
+    totalTicker=setInterval(()=>{
+      if(!running) return;
+      if(mode==='work') state.totalWorkSec=(state.totalWorkSec||0)+1;
+      else state.totalBreakSec=(state.totalBreakSec||0)+1;
+      localStorage.setItem(LS_KEY, JSON.stringify(state));
+      updateFooterTotal();
+    }, 1000);
+  }
+  function stopTotalTicker(){ if(totalTicker){ clearInterval(totalTicker); totalTicker=null; } }
   function applyTheme(theme){
     const t=THEMES[theme]||THEMES.ippo;
     // only override if no custom URL
@@ -350,15 +374,18 @@
     if(remaining<=0) remaining=total;
     endAt=Date.now()+remaining*1000; running=true; render();
     timerId=setInterval(tick,250);
+    startTotalTicker();
   }
   function pause(){
     if(!running) return;
     clearInterval(timerId); timerId=null; running=false;
     const secLeft=Math.max(0, Math.ceil((endAt - Date.now())/1000));
     remaining=secLeft; pausedRemaining=secLeft; render();
+    stopTotalTicker();
   }
   function reset(){
     clearInterval(timerId); timerId=null; running=false; pausedRemaining=null;
+    stopTotalTicker();
     total=(mode==='work'?state.work:state.relax)*60; remaining=total; render();
   }
   function switchMode(withNotify=true){
@@ -373,7 +400,7 @@
     if(soundOn.checked) playBell(next);
     if(notifyOn.checked) fireNotification(next);
     switchMode(false);
-    if(autoStart.checked){ setTimeout(()=>{ endAt=Date.now()+remaining*1000; running=true; timerId=setInterval(tick,250); render(); }, 600); }
+    if(autoStart.checked){ setTimeout(()=>{ endAt=Date.now()+remaining*1000; running=true; timerId=setInterval(tick,250); render(); startTotalTicker(); }, 600); } else { stopTotalTicker(); }
   }
 
   let audioCtx=null;
@@ -468,10 +495,10 @@
 
   // mode tabs — manual switch
   workTab.addEventListener('click', ()=>{
-    if(mode!=='work'){ mode='work'; total=state.work*60; remaining=total; pausedRemaining=null; if(running){ clearInterval(timerId); running=false; } render(); }
+    if(mode!=='work'){ mode='work'; total=state.work*60; remaining=total; pausedRemaining=null; if(running){ clearInterval(timerId); running=false; stopTotalTicker(); } render(); }
   });
   watchTab.addEventListener('click', ()=>{
-    if(mode!=='relax'){ mode='relax'; total=state.relax*60; remaining=total; pausedRemaining=null; if(running){ clearInterval(timerId); running=false; } render(); }
+    if(mode!=='relax'){ mode='relax'; total=state.relax*60; remaining=total; pausedRemaining=null; if(running){ clearInterval(timerId); running=false; stopTotalTicker(); } render(); }
   });
 
   // theme switch via dropdown
