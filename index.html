@@ -47,7 +47,8 @@
   .pill.outline{ background:rgba(0,0,0,.18); color:#fff; border-color:rgba(255,255,255,.92); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); }
   .pill.outline:hover{ background:rgba(255,255,255,.10); }
 
-  .digits{
+  .digits, .digits-input{
+    font-family:'Inter', system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
     font-variant-numeric:tabular-nums;
     font-weight:900;
     font-size:clamp(84px, 18vw, 148px);
@@ -55,35 +56,28 @@
     letter-spacing:-.05em;
     color:#fff;
     text-shadow:0 8px 32px rgba(0,0,0,.45);
+  }
+  .digits{
     cursor:pointer;
     user-select:none;
-    transition: opacity .15s, transform .15s;
   }
-  .digits:hover{ opacity:.92; transform:scale(1.01); }
-  .digits:active{ transform:scale(.99); }
   .digits-hint{
     margin-top:6px;
     font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.62);font-weight:700;opacity:0;transition:opacity .2s;
   }
-  .digits:hover + .digits-hint, .digits-hint.show{ opacity:1; }
+  .digits-wrap:hover .digits-hint, .digits-hint.show{ opacity:1; }
   .digits-input{
-    font-variant-numeric:tabular-nums;
-    font-weight:900;
-    font-size:clamp(84px, 18vw, 148px);
-    line-height:.9;
-    letter-spacing:-.05em;
-    color:#fff;
     background:transparent;
     border:none;
     border-radius:0;
     padding:0;
     text-align:center;
-    width:2ch;
+    width:3ch;
     max-width:40vw;
     outline:none;
-    text-shadow:0 8px 32px rgba(0,0,0,.45);
     display:none;
   }
+  .digits-input:focus{ outline:none; }
   .digits-wrap{ display:inline-flex; align-items:baseline; justify-content:center; gap:0; }
 
   .controls-row{ margin-top:22px; display:flex;gap:12px;align-items:center;justify-content:center }
