@@ -120,8 +120,8 @@
   .close-btn{border:1px solid #2e2e32;background:#1e1e22;color:#fff;width:32px;height:32px;border-radius:999px;cursor:pointer}
   .field label{display:block;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#9a9a9e;font-weight:800;margin-bottom:6px}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-  .field input{width:100%;background:#0e0e10;border:1px solid #2e2e32;color:#fff;padding:10px 12px;border-radius:10px;font-weight:700;outline:none}
-  .field input:focus{border-color:#3a3a3e}
+  .field input, .field select{width:100%;background:#0e0e10;border:1px solid #2e2e32;color:#fff;padding:10px 12px;border-radius:10px;font-weight:700;outline:none}
+  .field input:focus, .field select:focus{border-color:#3a3a3e}
   .presets{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
   .chip{padding:7px 12px;border-radius:999px;border:1px solid #2e2e32;background:transparent;color:#9a9a9e;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;cursor:pointer}
   .chip.active{background:#fff;color:#111;border-color:#fff}
@@ -158,10 +158,6 @@
 <div class="brand">ANI<span>MEDORO</span> × IPPO</div>
 
 <main class="stage" id="stage">
-  <div class="theme-switch" id="themeSwitch">
-    <button class="theme-pill active" id="themeIppo" data-theme="ippo">🥊 Ippo</button>
-    <button class="theme-pill" id="themeInitiald" data-theme="initiald">🏎️ Initial D</button>
-  </div>
   <div class="mode-switch" id="modeSwitch">
     <button class="pill active" id="workTab">📚 Work</button>
     <button class="pill outline" id="watchTab">📺 Watch</button>
@@ -188,10 +184,12 @@
       <button class="close-btn" id="closeBtn" aria-label="Close">✕</button>
     </div>
     <p class="hint" style="margin-bottom:10px">Click the time or use presets. Changes apply instantly. Saved locally.</p>
-    <div style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#9a9a9e;font-weight:800;margin-bottom:6px">Theme</div>
-    <div style="display:flex;gap:8px;margin-bottom:12px">
-      <button class="chip active" id="themeChipIppo" data-theme="ippo">🥊 Hajime no Ippo</button>
-      <button class="chip" id="themeChipInitiald" data-theme="initiald">🏎️ Initial D</button>
+    <div class="field" style="margin-bottom:12px">
+      <label for="themeSelect">Theme</label>
+      <select id="themeSelect">
+        <option value="ippo">🥊 Hajime no Ippo</option>
+        <option value="initiald">🏎️ Initial D</option>
+      </select>
     </div>
     <div class="presets">
       <button class="chip active" data-preset="40-20">40 / 20</button>
@@ -240,6 +238,7 @@
   const workInput=$('#workInput'), relaxInput=$('#relaxInput');
   const autoStart=$('#autoStart'), soundOn=$('#soundOn'), notifyOn=$('#notifyOn'), notifyPermBtn=$('#notifyPermBtn');
   const workUrl=$('#workUrl'), relaxUrl=$('#relaxUrl');
+  const themeSelect=$('#themeSelect');
   const modal=$('#modal'), closeBtn=$('#closeBtn');
   const LS_KEY='animedoro-ippo-v3';
   const THEMES={
@@ -261,12 +260,13 @@
   workInput.value=state.work; relaxInput.value=state.relax;
   autoStart.checked=state.autoStart; soundOn.checked=state.sound; notifyOn.checked=state.notify;
   workUrl.value=state.workUrl||''; relaxUrl.value=state.relaxUrl||'';
+  themeSelect.value=state.theme||'ippo';
   applyTheme(state.theme||'ippo');
   applyPresetActive(); applyThemeActive(); render();
 
   function load(){ try{ const v=JSON.parse(localStorage.getItem(LS_KEY)||'null'); return {...DEFAULTS, ...(v||{})}; }catch{ return {...DEFAULTS}; } }
   function save(){
-    const curTheme = document.querySelector('.theme-pill.active')?.dataset.theme || state.theme || 'ippo';
+    const curTheme = themeSelect?.value || state.theme || 'ippo';
     state={ theme: curTheme, work:clamp(+workInput.value||40,1,120), relax:clamp(+relaxInput.value||20,1,60), autoStart:autoStart.checked, sound:soundOn.checked, notify:notifyOn.checked, workUrl:workUrl.value.trim(), relaxUrl:relaxUrl.value.trim() };
     localStorage.setItem(LS_KEY, JSON.stringify(state));
   }
@@ -282,8 +282,7 @@
   }
   function applyThemeActive(){
     const cur=state.theme||'ippo';
-    document.querySelectorAll('.theme-pill').forEach(b=> b.classList.toggle('active', b.dataset.theme===cur));
-    document.querySelectorAll('[data-theme].chip').forEach(b=> b.classList.toggle('active', b.dataset.theme===cur));
+    if(themeSelect) themeSelect.value=cur;
   }
   function setTheme(theme){
     state.theme=theme;
@@ -414,12 +413,10 @@
     if(mode!=='relax'){ mode='relax'; total=state.relax*60; remaining=total; pausedRemaining=null; if(running){ clearInterval(timerId); running=false; } render(); }
   });
 
-  // theme switch — Ippo / Initial D
-  document.querySelectorAll('.theme-pill, [data-theme].chip').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      const th=btn.dataset.theme;
-      if(THEMES[th]) setTheme(th);
-    });
+  // theme switch via dropdown
+  themeSelect.addEventListener('change', ()=>{
+    const th=themeSelect.value;
+    if(THEMES[th]) setTheme(th);
   });
 
   startBtn.addEventListener('click', start);
@@ -435,8 +432,8 @@
   }
   workInput.addEventListener('change', ()=>{ syncTotals(); updateSplitPreview(); });
   relaxInput.addEventListener('change', ()=>{ syncTotals(); updateSplitPreview(); });
-  workInput.addEventListener('input', updateSplitPreview);
-  relaxInput.addEventListener('input', updateSplitPreview);
+  workInput.addEventListener('input', ()=>{ syncTotals(); updateSplitPreview(); });
+  relaxInput.addEventListener('input', ()=>{ syncTotals(); updateSplitPreview(); });
   workMinus.addEventListener('click', ()=>{ workInput.value=clamp((+workInput.value||40)-5,1,120); syncTotals(); updateSplitPreview(); });
   workPlus.addEventListener('click', ()=>{ workInput.value=clamp((+workInput.value||40)+5,1,120); syncTotals(); updateSplitPreview(); });
   relaxMinus.addEventListener('click', ()=>{ relaxInput.value=clamp((+relaxInput.value||20)-5,1,60); syncTotals(); updateSplitPreview(); });
