@@ -1,26 +1,26 @@
-# Ippo Animedoro Timer 🥊
+# Ippo × Initial D — Animedoro Timer 🏁🥊
 
-Minimal, flocus-style animedoro timer with full-screen Hajime no Ippo gifs.
+Flocus-style minimal animedoro timer with full-screen high-res themes.
 
-- **Full background gifs** — work vs relax swap (high-res 498px, ~1.5MB)
-  - Work: Dempsey Roll (`c.tenor.com/esQzZcKf6FwAAAAC/dempsey-roll.gif` → `assets/work.gif`)
-  - Relax: Ippo chill (`c.tenor.com/dhiZs4RULI0AAAAC/ippo-hajime-no-ippo.gif` → `assets/relax.gif`)
-- **Flocus-like minimal UI** — centered glass card, `88px` tabular timer, thin progress line, single Start/Pause + Reset + Skip
-- **Custom time split** — pick any work/break you want:
-  - Presets: 40/20 (default animedoro), 25/5, 45/15, 50/10, 60/20, 30/10
-  - Or custom via stepper/number inputs (1–120m work, 1–60m break) with live split preview (`40m work + 20m break = 60m cycle`)
-  - Persisted in `localStorage` (`animedoro-ippo-v2`), updates instantly; `⚙` gear opens settings modal
-- **Sound & notifications** — boxing-bell Web Audio chime + `Notification` + title flash on phase change (toggleable, permission button)
-- **Custom gifs** — paste any Tenor/Giphy URL in settings to replace either background (saved locally)
+## Themes
+- **🥊 Hajime no Ippo** (default): Work = Dempsey Roll `498×380 1.5MB` (`esQzZcKf6FwAAAAC`), Relax = Ippo chill `498×375 1MB` (`dhiZs4RULI0AAAAC`)
+- **🏎️ Initial D**: Work = AE86/FD drift `498×318 1.2MB` (`8I_13j-yo0UAAAAC/initiald-car.gif`), Relax = Eurobeat driving `498×369 228KB` (`1osmNTdrmukAAAAC`)
+
+Switch via theme pills above Work/Watch or in `⚙` → Theme (persisted `localStorage: animedoro-ippo-v3`). Custom GIF URLs per theme still supported.
+
+## UI — Image 1 / Flocus style
+- Two pills top: `📚 Work` (white fill active) / `📺 Watch` (outline)
+- Huge `50:00`-style time `clamp(84px,18vw,148px)` — **click the time to edit split**
+- Controls: black `Start/Pause` pill + `↻` reset + `⚙` gear; no glass card, just floating over full-bleed gif
+- Background: full viewport `object-fit:cover` gifs with crossfade `0.8s`, `scale(1.04→1)` + dark overlay
+
+## Time split
+Presets `40/20`, `25/5`, `45/15`, `50/10`, `60/20`, `30/10` + custom stepper (Work 1–120m, Watch 1–60m) with live split preview bar. Applies instantly, saved locally. Open via clicking time or gear. Also `Space`/`R`/`Esc`.
 
 ## Use
-
-Open `index.html` directly or `npx serve .` — no build.
-
 ```
-open index.html
-# presets or custom split via ⚙
-Space = Start/Pause, R = Reset, S = Skip, Esc = close settings
+open index.html  # or npx serve .
+# click 40:00 to change 40/20 → any split, or toggle 🥊/🏎️ theme
 ```
 
-Gifs are fan-use via Tenor; replace via settings if publishing commercially.
+Gifs fan-use via Tenor `c.tenor.com/…AAAAC` (high-res); replace via settings if publishing commercially.

@@ -4,342 +4,195 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Animedoro — Hajime no Ippo</title>
-<meta name="description" content="Minimal animedoro timer — full-screen Hajime no Ippo. 40 work / 20 relax.">
-<link rel="preconnect" href="https://media.tenor.com">
+<meta name="description" content="Minimal animedoro timer — full-screen Hajime no Ippo. Click time to set split.">
+<link rel="preconnect" href="https://c.tenor.com">
 <style>
-  :root{
-    --text:#fff;
-    --muted: rgba(255,255,255,.72);
-    --red:#e53935;
-    --teal:#26a69a;
-  }
+  :root{ --text:#fff; --red:#e53935; --teal:#26a69a; }
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{height:100%}
   body{
-    font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-    color:var(--text);
-    background:#0a0a0a;
-    overflow:hidden;
+    font-family:'Inter', system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+    color:var(--text); background:#0a0a0a; overflow:hidden;
   }
-  /* FULL BACKGROUND GIFS — flocus style */
-  .bg{
-    position:fixed; inset:0;
-    z-index:0;
-    background:#000;
-    overflow:hidden;
-  }
-  .bg img{
-    position:absolute; inset:0;
-    width:100%; height:100%;
-    object-fit: cover;
-    object-position: center;
-    opacity:0;
-    transition: opacity .8s ease, transform 8s linear;
-    transform: scale(1.04);
-    filter: saturate(1.08) contrast(1.04) brightness(0.92);
-    will-change: opacity, transform;
-  }
-  .bg img.active{
-    opacity:1;
-    transform: scale(1);
-  }
-  .bg.paused img.active{
-    /* freeze perception - subtle dim */
-    filter: saturate(.85) brightness(.8);
-  }
-  .bg-overlay{
-    position:absolute; inset:0;
-    background:
-      linear-gradient(180deg, rgba(0,0,0,.22) 0%, rgba(0,0,0,.55) 100%),
-      radial-gradient(900px 500px at 50% 40%, rgba(0,0,0,.18) 0%, rgba(0,0,0,.45) 70%);
-    pointer-events:none;
-  }
-  .bg::after{
-    content:"";
-    position:absolute; inset:0;
-    background: radial-gradient(800px 400px at 50% 35%, rgba(229,57,53,.10), transparent 70%);
-    opacity:1;
-    transition: opacity .6s ease;
-    pointer-events:none;
-  }
-  .bg.relax::after{ background: radial-gradient(800px 400px at 50% 35%, rgba(38,166,154,.14), transparent 70%); }
+  /* full background gifs — high-res 498px */
+  .bg{position:fixed;inset:0;z-index:0;background:#000;overflow:hidden}
+  .bg img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;opacity:0;transition:opacity .8s ease, transform 8s linear;transform:scale(1.04);filter:saturate(1.08) contrast(1.04) brightness(0.88);will-change:opacity,transform}
+  .bg img.active{opacity:1;transform:scale(1)}
+  .bg.paused img.active{filter:saturate(.85) brightness(.78)}
+  .bg-overlay{position:absolute;inset:0;background:linear-gradient(180deg, rgba(0,0,0,.18) 0%, rgba(0,0,0,.52) 100%);pointer-events:none}
+  .bg::after{content:"";position:absolute;inset:0;background:radial-gradient(800px 400px at 50% 35%, rgba(229,57,53,.08), transparent 70%);pointer-events:none;transition:opacity .6s}
+  .bg.relax::after{background:radial-gradient(800px 400px at 50% 35%, rgba(38,166,154,.12), transparent 70%)}
 
-  /* top bar — minimal like flocus #top */
-  .topbar{
-    position:fixed; top:0; left:0; right:0;
-    z-index:3;
-    display:flex; align-items:center; justify-content:space-between;
-    padding: 18px 20px;
-    pointer-events:none;
-  }
-  .topbar > *{ pointer-events:auto; }
-  .brand{
-    font-weight:900;
-    font-size:12px;
-    letter-spacing:.14em;
-    text-transform:uppercase;
-    opacity:.92;
-    text-shadow: 0 1px 12px rgba(0,0,0,.6);
-  }
-  .brand span{ color: var(--red); }
-  .mode-relax .brand span{ color: var(--teal); }
-  .top-actions{ display:flex; gap:8px; align-items:center; }
-  .icon-btn{
-    appearance:none;
-    border:1px solid rgba(255,255,255,.18);
-    background: rgba(0,0,0,.28);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    color:#fff;
-    width:36px; height:36px;
-    border-radius:999px;
-    cursor:pointer;
-    display:grid; place-items:center;
-    font-size:16px;
-    transition: background .15s ease, border-color .15s ease;
-  }
-  .icon-btn:hover{ background: rgba(0,0,0,.42); border-color: rgba(255,255,255,.28); }
-
-  /* center stage — flocus bottom-mid vibe but centered */
-  .center{
-    position:fixed; inset:0;
-    z-index:2;
-    display:grid;
-    place-items:center;
-    padding: 60px 16px 24px;
-    pointer-events:none;
-  }
-  .glass{
-    pointer-events:auto;
-    width:100%;
-    max-width: 440px;
-    background: rgba(18,18,20,.62);
-    backdrop-filter: blur(16px) saturate(1.2);
-    -webkit-backdrop-filter: blur(16px) saturate(1.2);
-    border:1px solid rgba(255,255,255,.12);
-    border-radius: 24px;
-    padding: 28px 22px 18px;
-    box-shadow: 0 20px 60px rgba(0,0,0,.45), 0 1px 0 rgba(255,255,255,.08) inset;
+  /* centered flocus-style UI — Image 1 reference */
+  .stage{
+    position:fixed;inset:0;z-index:2;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:24px 16px;
     text-align:center;
   }
-  .mode-pill{
-    display:inline-flex; align-items:center; gap:8px;
-    padding:7px 12px;
-    border-radius:999px;
-    font-size:10px; font-weight:800; letter-spacing:.14em; text-transform:uppercase;
-    background: rgba(229,57,53,.92);
-    border:1px solid rgba(255,255,255,.14);
-    box-shadow: 0 4px 16px rgba(0,0,0,.25);
-  }
-  .mode-relax .mode-pill{ background: rgba(38,166,154,.92); }
-  .digits{
-    margin-top:14px;
-    font-variant-numeric: tabular-nums;
-    font-weight: 900;
-    font-size: clamp(64px, 14vw, 88px);
-    letter-spacing: -.04em;
-    line-height:.9;
-    text-shadow: 0 6px 24px rgba(0,0,0,.35);
-  }
-  .hint{
-    margin-top:6px;
-    font-size:11px;
-    letter-spacing:.16em;
-    text-transform:uppercase;
-    color: var(--muted);
-    font-weight:700;
-  }
-  .quote{
-    margin-top:10px;
-    font-size:12px;
-    color: rgba(255,255,255,.78);
-    font-style: italic;
-    min-height: 16px;
-  }
-  /* thin progress line a la flocus subtle */
-  .progress-track{
-    margin:18px auto 0;
-    width:100%;
-    max-width: 320px;
-    height:3px;
-    background: rgba(255,255,255,.14);
-    border-radius:999px;
-    overflow:hidden;
-  }
-  .progress-fill{
-    height:100%;
-    width:100%;
-    background: var(--red);
-    transform-origin: left;
-    transform: scaleX(1);
-    transition: transform .4s linear, background .4s ease;
-  }
-  .mode-relax .progress-fill{ background: var(--teal); }
-
-  .controls{
-    margin-top:18px;
-    display:flex; gap:10px; justify-content:center; align-items:center; flex-wrap:wrap;
-  }
-  .btn{
+  .mode-switch{display:flex;gap:12px;align-items:center;justify-content:center;margin-bottom:18px}
+  .pill{
     appearance:none;
-    border:1px solid rgba(255,255,255,.16);
-    background: rgba(255,255,255,.10);
-    backdrop-filter: blur(8px);
-    color:#fff;
-    font-weight:800;
-    font-size:13px;
-    letter-spacing:.06em;
-    text-transform:uppercase;
-    padding:12px 18px;
+    padding:11px 22px;
     border-radius:999px;
+    font-weight:800;
+    font-size:15px;
+    letter-spacing:.01em;
+    border:2px solid rgba(255,255,255,.92);
     cursor:pointer;
     transition: all .15s ease;
-    display:inline-flex; align-items:center; gap:8px;
-    min-width: 128px;
-    justify-content:center;
+    display:inline-flex;align-items:center;gap:8px;
   }
-  .btn:hover{ background: rgba(255,255,255,.16); border-color: rgba(255,255,255,.24); transform: translateY(-1px); }
-  .btn:active{ transform: translateY(0); }
-  .btn:disabled{ opacity:.45; cursor:not-allowed; transform:none; }
-  .btn.primary{
-    background: #fff;
-    color:#111;
-    border-color:#fff;
-    box-shadow: 0 8px 24px rgba(0,0,0,.25);
-    min-width: 150px;
-  }
-  .btn.primary:hover{ background:#f2f2f2; }
-  .btn.ghost{
-    min-width: 72px;
-    padding:11px 14px;
-    background: rgba(0,0,0,.22);
-  }
-  .meta{
-    margin-top:14px;
-    font-size:11px;
-    letter-spacing:.06em;
-    color: rgba(255,255,255,.68);
-    display:flex; gap:8px; justify-content:center; align-items:center; flex-wrap:wrap;
-  }
-  .meta strong{ color:#fff; font-weight:800; }
-  .meta .dot{ width:6px; height:6px; border-radius:50%; background: var(--red); box-shadow:0 0 8px rgba(229,57,53,.6); }
-  .mode-relax .meta .dot{ background: var(--teal); box-shadow:0 0 8px rgba(38,166,154,.6); }
+  .pill.active{ background:#fff; color:#111; border-color:#fff; box-shadow:0 6px 20px rgba(0,0,0,.22); }
+  .pill.outline{ background:rgba(0,0,0,.18); color:#fff; border-color:rgba(255,255,255,.92); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); }
+  .pill.outline:hover{ background:rgba(255,255,255,.10); }
 
-  /* settings modal — minimal */
-  .modal{
-    position:fixed; inset:0;
-    z-index:10;
-    display:none;
-    place-items:center;
-    padding:16px;
-    background: rgba(0,0,0,.48);
-    backdrop-filter: blur(6px);
+  .digits{
+    font-variant-numeric:tabular-nums;
+    font-weight:900;
+    font-size:clamp(84px, 18vw, 148px);
+    line-height:.9;
+    letter-spacing:-.05em;
+    color:#fff;
+    text-shadow:0 8px 32px rgba(0,0,0,.45);
+    cursor:pointer;
+    user-select:none;
+    transition: opacity .15s, transform .15s;
   }
+  .digits:hover{ opacity:.92; transform:scale(1.01); }
+  .digits:active{ transform:scale(.99); }
+  .digits-hint{
+    margin-top:6px;
+    font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.62);font-weight:700;opacity:0;transition:opacity .2s;
+  }
+  .digits:hover + .digits-hint, .digits-hint.show{ opacity:1; }
+
+  .controls-row{ margin-top:22px; display:flex;gap:12px;align-items:center;justify-content:center }
+  .start-pill{
+    appearance:none;
+    background:#0a0a0a;
+    color:#fff;
+    border:1px solid #0a0a0a;
+    padding:14px 42px;
+    border-radius:999px;
+    font-weight:900;
+    font-size:16px;
+    letter-spacing:.02em;
+    cursor:pointer;
+    box-shadow:0 8px 24px rgba(0,0,0,.35);
+    transition: transform .12s, background .15s;
+    min-width:140px;
+  }
+  .start-pill:hover{ background:#1a1a1a; transform:translateY(-1px); }
+  .start-pill:active{ transform:translateY(0); }
+  .icon-btn{
+    appearance:none;
+    width:42px;height:42px;
+    border-radius:999px;
+    border:1px solid rgba(255,255,255,.18);
+    background:rgba(0,0,0,.22);
+    backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+    color:#fff;
+    display:grid;place-items:center;
+    font-size:18px;cursor:pointer;
+    transition: background .15s, border-color .15s, transform .12s;
+  }
+  .icon-btn:hover{ background:rgba(0,0,0,.38); border-color:rgba(255,255,255,.28); transform:translateY(-1px); }
+  .icon-btn:active{ transform:translateY(0); }
+  .icon-btn svg{ width:20px;height:20px;display:block; }
+
+  /* tiny bottom brand */
+  .brand{
+    position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:3;
+    font-weight:900;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.72);
+    text-shadow:0 1px 10px rgba(0,0,0,.5);
+    pointer-events:none;
+  }
+  .brand span{ color:var(--red); }
+  .mode-relax .brand span{ color:var(--teal); }
+
+  /* modal — time split editor (opens on time click or gear) */
+  .modal{position:fixed;inset:0;z-index:10;display:none;place-items:center;padding:16px;background:rgba(0,0,0,.48);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
   .modal.open{ display:grid; }
-  .modal-card{
-    width:100%; max-width: 420px;
-    background: #121214;
-    border:1px solid #2a2a2e;
-    border-radius: 16px;
-    padding:18px;
-    color:#f5f3ef;
-    box-shadow: 0 20px 60px rgba(0,0,0,.6);
-  }
-  .modal-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
-  .modal-head h3{ font-size:13px; letter-spacing:.08em; text-transform:uppercase; font-weight:900; }
-  .close-btn{
-    border:1px solid #2e2e32; background:#1e1e22; color:#fff; width:32px; height:32px; border-radius:999px; cursor:pointer;
-  }
-  .field label{ display:block; font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:#9a9a9e; font-weight:800; margin-bottom:6px; }
-  .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-  .field input{
-    width:100%; background:#0e0e10; border:1px solid #2e2e32; color:#fff; padding:10px 12px; border-radius:10px; font-weight:700; outline:none;
-  }
-  .field input:focus{ border-color:#3a3a3e; }
-  .presets{ display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
-  .chip{
-    padding:7px 12px; border-radius:999px; border:1px solid #2e2e32; background:transparent; color:#9a9a9e;
-    font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; cursor:pointer;
-  }
-  .chip.active{ background:#fff; color:#111; border-color:#fff; }
-  .toggles{ margin-top:14px; display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
-  .toggle{ display:flex; align-items:center; gap:8px; font-size:12px; font-weight:600; }
-  .toggle input{ accent-color: var(--red); }
-  .hint{ font-size:11px; color:#9a9a9e; line-height:1.4; }
-  .gif-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px; }
-  .split-preview{ margin-top:12px; background:#0e0e10; border:1px solid #2e2e32; border-radius:12px; padding:12px; }
-  .split-bar{ display:flex; height:10px; border-radius:999px; overflow:hidden; background:#1e1e22; margin-bottom:8px; }
-  .split-bar .work-part{ background: var(--red); transition: width .25s ease; }
-  .split-bar .break-part{ background: var(--teal); transition: width .25s ease; }
-  .split-label{ font-size:11px; color:#9a9a9e; text-align:center; letter-spacing:.04em; }
-  .split-label strong{ color:#fff; }
-  .stepper{ display:flex; align-items:center; gap:6px; }
-  .stepper button{ width:32px; height:38px; border:1px solid #2e2e32; background:#1e1e22; color:#fff; border-radius:8px; cursor:pointer; font-weight:800; font-size:14px; }
-  .stepper button:active{ background:#2a2a2e; }
-  .stepper input{ flex:1; text-align:center; }
-  @media (max-width:480px){ .grid2, .gif-grid{ grid-template-columns:1fr; } }
-  .footer-link{
-    position:fixed; bottom:10px; left:50%; transform:translateX(-50%);
-    z-index:3;
-    font-size:10px; letter-spacing:.08em; text-transform:uppercase; color: rgba(255,255,255,.62);
-    background: rgba(0,0,0,.28); border:1px solid rgba(255,255,255,.12); padding:6px 10px; border-radius:999px;
-    backdrop-filter: blur(8px);
-  }
-  .footer-link a{ color:#fff; text-decoration:none; border-bottom:1px dotted rgba(255,255,255,.5); }
-  .kbd{ display:none; } /* hide on minimal, but keep for a11y */
-  @media (min-width:700px){ .kbd{ display:inline-flex; gap:6px; align-items:center; font-size:10px; color:rgba(255,255,255,.55); } .kbd span{ background:rgba(0,0,0,.35); border:1px solid rgba(255,255,255,.14); padding:2px 6px; border-radius:6px; font-weight:700; } }
+  .modal-card{width:100%;max-width:420px;background:#121214;border:1px solid #2a2a2e;border-radius:16px;padding:18px;color:#f5f3ef;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+  .modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+  .modal-head h3{font-size:13px;letter-spacing:.08em;text-transform:uppercase;font-weight:900}
+  .close-btn{border:1px solid #2e2e32;background:#1e1e22;color:#fff;width:32px;height:32px;border-radius:999px;cursor:pointer}
+  .field label{display:block;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#9a9a9e;font-weight:800;margin-bottom:6px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .field input{width:100%;background:#0e0e10;border:1px solid #2e2e32;color:#fff;padding:10px 12px;border-radius:10px;font-weight:700;outline:none}
+  .field input:focus{border-color:#3a3a3e}
+  .presets{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .chip{padding:7px 12px;border-radius:999px;border:1px solid #2e2e32;background:transparent;color:#9a9a9e;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;cursor:pointer}
+  .chip.active{background:#fff;color:#111;border-color:#fff}
+  .toggles{margin-top:14px;display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+  .toggle{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600}
+  .toggle input{accent-color:var(--red)}
+  .hint{font-size:11px;color:#9a9a9e;line-height:1.4}
+  .gif-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+  .split-preview{margin-top:12px;background:#0e0e10;border:1px solid #2e2e32;border-radius:12px;padding:12px}
+  .split-bar{display:flex;height:10px;border-radius:999px;overflow:hidden;background:#1e1e22;margin-bottom:8px}
+  .split-bar .work-part{background:var(--red);transition:width .25s}
+  .split-bar .break-part{background:var(--teal);transition:width .25s}
+  .split-label{font-size:11px;color:#9a9a9e;text-align:center}
+  .split-label strong{color:#fff}
+  .stepper{display:flex;align-items:center;gap:6px}
+  .stepper button{width:32px;height:38px;border:1px solid #2e2e32;background:#1e1e22;color:#fff;border-radius:8px;cursor:pointer;font-weight:800;font-size:14px}
+  .stepper button:active{background:#2a2a2e}
+  .stepper input{flex:1;text-align:center}
+  @media (max-width:480px){ .grid2,.gif-grid{grid-template-columns:1fr} }
+  .theme-switch{display:flex;gap:8px;justify-content:center;margin-bottom:10px}
+  .theme-pill{appearance:none;padding:7px 14px;border-radius:999px;font-weight:800;font-size:11px;letter-spacing:.08em;text-transform:uppercase;border:1px solid rgba(255,255,255,.22);background:rgba(0,0,0,.22);color:rgba(255,255,255,.86);backdrop-filter:blur(8px);cursor:pointer;transition:all .15s}
+  .theme-pill.active{background:#fff;color:#111;border-color:#fff;box-shadow:0 4px 14px rgba(0,0,0,.22)}
+  .footer-link{position:fixed;bottom:10px;left:50%;transform:translateX(-50%);z-index:3;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.62);background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.12);padding:6px 10px;border-radius:999px;backdrop-filter:blur(8px)}
+  .footer-link a{color:#fff;text-decoration:none;border-bottom:1px dotted rgba(255,255,255,.5)}
 </style>
 </head>
 <body>
-
-<!-- full background gifs — high-res 498px AAAAC -->
 <div class="bg" id="bg">
-  <img id="workBg" class="active" src="assets/work.gif" alt="work bg — Ippo Dempsey Roll" onerror="this.src='https://c.tenor.com/esQzZcKf6FwAAAAC/dempsey-roll.gif'">
-  <img id="relaxBg" src="assets/relax.gif" alt="relax bg — Ippo chill" onerror="this.src='https://c.tenor.com/dhiZs4RULI0AAAAC/ippo-hajime-no-ippo.gif'">
+  <img id="workBg" class="active" src="assets/work.gif" alt="work — Ippo Dempsey Roll" onerror="this.src='https://c.tenor.com/esQzZcKf6FwAAAAC/dempsey-roll.gif'">
+  <img id="relaxBg" src="assets/relax.gif" alt="relax — Ippo chill" onerror="this.src='https://c.tenor.com/dhiZs4RULI0AAAAC/ippo-hajime-no-ippo.gif'">
   <div class="bg-overlay"></div>
 </div>
 
-<nav class="topbar">
-  <div class="brand">ANI<span>MEDORO</span> × IPPO</div>
-  <div class="top-actions">
-    <div class="kbd"><span>Space</span> <span>R</span> <span>S</span></div>
-    <button class="icon-btn" id="settingsBtn" aria-label="Settings">⚙</button>
-  </div>
-</nav>
+<div class="brand">ANI<span>MEDORO</span> × IPPO</div>
 
-<main class="center">
-  <div class="glass" id="glass">
-    <div class="mode-pill" id="modePill">🥊 WORK</div>
-    <div class="digits" id="digits">40:00</div>
-    <div class="hint" id="hint">Focus — hands up</div>
-    <div class="quote" id="quote">“What does it mean to be strong?”</div>
-    <div class="progress-track" aria-hidden="true"><div class="progress-fill" id="fill"></div></div>
-    <div class="controls">
-      <button class="btn primary" id="startBtn">▶ Start</button>
-      <button class="btn ghost" id="resetBtn" title="Reset (R)">↺</button>
-      <button class="btn ghost" id="skipBtn" title="Skip (S)">Skip →</button>
-    </div>
-    <div class="meta">
-      <span class="dot" id="dot"></span>
-      <span id="roundText">Round <strong>1</strong></span>
-      <span style="opacity:.4">·</span>
-      <span id="cycleText">40 / 20</span>
-      <span style="opacity:.4">·</span>
-      <span id="nextUp">next: relax 20:00</span>
-    </div>
+<main class="stage" id="stage">
+  <div class="theme-switch" id="themeSwitch">
+    <button class="theme-pill active" id="themeIppo" data-theme="ippo">🥊 Ippo</button>
+    <button class="theme-pill" id="themeInitiald" data-theme="initiald">🏎️ Initial D</button>
+  </div>
+  <div class="mode-switch" id="modeSwitch">
+    <button class="pill active" id="workTab">📚 Work</button>
+    <button class="pill outline" id="watchTab">📺 Watch</button>
+  </div>
+  <div class="digits" id="digits" title="Click to edit time">40:00</div>
+  <div class="digits-hint" id="digitsHint">click time to edit split</div>
+  <div class="controls-row">
+    <button class="start-pill" id="startBtn">Start</button>
+    <button class="icon-btn" id="resetBtn" aria-label="Reset" title="Reset (R)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+    </button>
+    <button class="icon-btn" id="settingsBtn" aria-label="Settings" title="Settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 9 15a1.65 1.65 0 0 0-1-1.51A1.65 1.65 0 0 0 6.18 13l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 10.82 10a1.65 1.65 0 0 0 1-1.51V8a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 15 12a1.65 1.65 0 0 0 1 1.51Z"/></svg>
+    </button>
   </div>
 </main>
 
-<div class="footer-link">Gifs: Hajime no Ippo on <a href="https://tenor.com/search/hajime-no-ippo-gifs" target="_blank" rel="noopener">Tenor</a> — flocus-style minimal animedoro</div>
+<div class="footer-link">Gifs: Hajime no Ippo on <a href="https://tenor.com/search/hajime-no-ippo-gifs" target="_blank" rel="noopener">Tenor</a> — click time to change split</div>
 
-<!-- minimal settings modal -->
 <div class="modal" id="modal" aria-hidden="true">
   <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
     <div class="modal-head">
-      <h3 id="modalTitle">Settings</h3>
+      <h3 id="modalTitle">Time split</h3>
       <button class="close-btn" id="closeBtn" aria-label="Close">✕</button>
     </div>
-
+    <p class="hint" style="margin-bottom:10px">Click the time or use presets. Changes apply instantly. Saved locally.</p>
+    <div style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#9a9a9e;font-weight:800;margin-bottom:6px">Theme</div>
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <button class="chip active" id="themeChipIppo" data-theme="ippo">🥊 Hajime no Ippo</button>
+      <button class="chip" id="themeChipInitiald" data-theme="initiald">🏎️ Initial D</button>
+    </div>
     <div class="presets">
       <button class="chip active" data-preset="40-20">40 / 20</button>
       <button class="chip" data-preset="25-5">25 / 5</button>
@@ -348,223 +201,167 @@
       <button class="chip" data-preset="60-20">60 / 20</button>
       <button class="chip" data-preset="30-10">30 / 10</button>
     </div>
-
-    <div style="margin-top:12px; font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:#9a9a9e; font-weight:800;">Custom split — pick any work / break you want</div>
+    <div style="margin-top:12px;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#9a9a9e;font-weight:800">Custom — pick any split</div>
     <div class="grid2" style="margin-top:8px">
       <div class="field">
         <label for="workInput">Work (minutes)</label>
-        <div class="stepper"><button type="button" id="workMinus" aria-label="Decrease work">−</button><input id="workInput" type="number" min="1" max="120" value="40"><button type="button" id="workPlus" aria-label="Increase work">+</button></div>
+        <div class="stepper"><button type="button" id="workMinus">−</button><input id="workInput" type="number" min="1" max="120" value="40"><button type="button" id="workPlus">+</button></div>
       </div>
       <div class="field">
-        <label for="relaxInput">Break (minutes)</label>
-        <div class="stepper"><button type="button" id="relaxMinus" aria-label="Decrease break">−</button><input id="relaxInput" type="number" min="1" max="60" value="20"><button type="button" id="relaxPlus" aria-label="Increase break">+</button></div>
+        <label for="relaxInput">Watch / Break (minutes)</label>
+        <div class="stepper"><button type="button" id="relaxMinus">−</button><input id="relaxInput" type="number" min="1" max="60" value="20"><button type="button" id="relaxPlus">+</button></div>
       </div>
     </div>
     <div class="split-preview">
       <div class="split-bar"><div class="work-part" id="workPart"></div><div class="break-part" id="breakPart"></div></div>
-      <div class="split-label" id="splitLabel"> <strong>40m</strong> work + <strong>20m</strong> break = <strong>60m</strong> cycle </div>
+      <div class="split-label" id="splitLabel"><strong>40m</strong> work + <strong>20m</strong> break = <strong>60m</strong> cycle</div>
     </div>
-
     <div class="toggles">
       <label class="toggle"><input type="checkbox" id="autoStart" checked> Auto-start</label>
       <label class="toggle"><input type="checkbox" id="soundOn" checked> Sound</label>
       <label class="toggle"><input type="checkbox" id="notifyOn" checked> Notify</label>
       <button class="chip" id="notifyPermBtn" style="margin-left:auto">Enable Notify</button>
     </div>
-
     <div class="gif-grid">
-      <div class="field">
-        <label for="workUrl">Work GIF URL</label>
-        <input id="workUrl" type="url" placeholder="https://...">
-      </div>
-      <div class="field">
-        <label for="relaxUrl">Relax GIF URL</label>
-        <input id="relaxUrl" type="url" placeholder="https://...">
-      </div>
+      <div class="field"><label for="workUrl">Work GIF URL</label><input id="workUrl" type="url" placeholder="https://..."></div>
+      <div class="field"><label for="relaxUrl">Watch GIF URL</label><input id="relaxUrl" type="url" placeholder="https://..."></div>
     </div>
-    <div class="hint" style="margin-top:8px">Full-background gifs. Defaults: <code>assets/work.gif</code> & <code>assets/relax.gif</code>. Paste any Tenor/Giphy link to replace. Saved locally.</div>
+    <div class="hint" style="margin-top:8px">Full-background gifs. Defaults: <code>assets/work.gif</code> & <code>assets/relax.gif</code>. Paste any Tenor/Giphy link to replace.</div>
   </div>
 </div>
 
 <script>
 (() => {
-  const $ = s => document.querySelector(s);
-  const bg = $('#bg');
-  const workBg = $('#workBg');
-  const relaxBg = $('#relaxBg');
-  const digits = $('#digits');
-  const hint = $('#hint');
-  const quote = $('#quote');
-  const fill = $('#fill');
-  const dot = $('#dot');
-  const modePill = $('#modePill');
-  const roundText = $('#roundText');
-  const cycleText = $('#cycleText');
-  const nextUp = $('#nextUp');
-  const startBtn = $('#startBtn');
-  const resetBtn = $('#resetBtn');
-  const skipBtn = $('#skipBtn');
-  const workInput = $('#workInput');
-  const relaxInput = $('#relaxInput');
-  const autoStart = $('#autoStart');
-  const soundOn = $('#soundOn');
-  const notifyOn = $('#notifyOn');
-  const notifyPermBtn = $('#notifyPermBtn');
-  const workUrl = $('#workUrl');
-  const relaxUrl = $('#relaxUrl');
-  const modal = $('#modal');
-  const settingsBtn = $('#settingsBtn');
-  const closeBtn = $('#closeBtn');
+  const $=s=>document.querySelector(s);
+  const bg=$('#bg'), workBg=$('#workBg'), relaxBg=$('#relaxBg');
+  const digits=$('#digits'), digitsHint=$('#digitsHint');
+  const workTab=$('#workTab'), watchTab=$('#watchTab');
+  const startBtn=$('#startBtn'), resetBtn=$('#resetBtn'), settingsBtn=$('#settingsBtn');
+  const workInput=$('#workInput'), relaxInput=$('#relaxInput');
+  const autoStart=$('#autoStart'), soundOn=$('#soundOn'), notifyOn=$('#notifyOn'), notifyPermBtn=$('#notifyPermBtn');
+  const workUrl=$('#workUrl'), relaxUrl=$('#relaxUrl');
+  const modal=$('#modal'), closeBtn=$('#closeBtn');
+  const LS_KEY='animedoro-ippo-v3';
+  const THEMES={
+    ippo:{ label:'🥊 Ippo', work:'assets/work.gif', relax:'assets/relax.gif', workFallback:'https://c.tenor.com/esQzZcKf6FwAAAAC/dempsey-roll.gif', relaxFallback:'https://c.tenor.com/dhiZs4RULI0AAAAC/ippo-hajime-no-ippo.gif' },
+    initiald:{ label:'🏎️ Initial D', work:'assets/initiald-work.gif', relax:'assets/initiald-relax.gif', workFallback:'https://c.tenor.com/8I_13j-yo0UAAAAC/initiald-car.gif', relaxFallback:'https://c.tenor.com/1osmNTdrmukAAAAC/eurobeat-driving.gif' }
+  };
+  const DEFAULTS={theme:'ippo', work:40, relax:20, autoStart:true, sound:true, notify:true, workUrl:'', relaxUrl:''};
+  let state=load();
+  // migrate v2 -> v3
+  if(!state.theme){
+    try{ const old=JSON.parse(localStorage.getItem('animedoro-ippo-v2')||'null'); if(old) state={...DEFAULTS, ...old, theme: old.theme||'ippo'}; }catch{}
+  }
+  let mode='work';
+  let total=state.work*60;
+  let remaining=total;
+  let roundsCompleted=0, currentRound=1;
+  let running=false, timerId=null, endAt=null, pausedRemaining=null;
 
-  const LS_KEY = 'animedoro-ippo-v2';
-  const DEFAULTS = { work:40, relax:20, autoStart:true, sound:true, notify:true, workUrl:'', relaxUrl:'' };
-
-  let state = load();
-  let mode = 'work';
-  let total = state.work*60;
-  let remaining = total;
-  let roundsCompleted = 0;
-  let currentRound = 1;
-  let running = false;
-  let timerId = null;
-  let endAt = null;
-  let pausedRemaining = null;
-
-  // init
-  workInput.value = state.work;
-  relaxInput.value = state.relax;
-  autoStart.checked = state.autoStart;
-  soundOn.checked = state.sound;
-  notifyOn.checked = state.notify;
-  workUrl.value = state.workUrl||'';
-  relaxUrl.value = state.relaxUrl||'';
-  if(state.workUrl) workBg.src = state.workUrl;
-  if(state.relaxUrl) relaxBg.src = state.relaxUrl;
-  applyPresetActive();
-  render();
-  // init split preview after DOM ready (elements exist)
-  setTimeout(()=>{ if(typeof updateSplitPreview==='function') updateSplitPreview(); }, 0);
+  workInput.value=state.work; relaxInput.value=state.relax;
+  autoStart.checked=state.autoStart; soundOn.checked=state.sound; notifyOn.checked=state.notify;
+  workUrl.value=state.workUrl||''; relaxUrl.value=state.relaxUrl||'';
+  applyTheme(state.theme||'ippo');
+  applyPresetActive(); applyThemeActive(); render();
 
   function load(){ try{ const v=JSON.parse(localStorage.getItem(LS_KEY)||'null'); return {...DEFAULTS, ...(v||{})}; }catch{ return {...DEFAULTS}; } }
   function save(){
-    state = {
-      work: clamp(+workInput.value||40,1,120),
-      relax: clamp(+relaxInput.value||20,1,60),
-      autoStart: autoStart.checked, sound: soundOn.checked, notify: notifyOn.checked,
-      workUrl: workUrl.value.trim(), relaxUrl: relaxUrl.value.trim()
-    };
+    const curTheme = document.querySelector('.theme-pill.active')?.dataset.theme || state.theme || 'ippo';
+    state={ theme: curTheme, work:clamp(+workInput.value||40,1,120), relax:clamp(+relaxInput.value||20,1,60), autoStart:autoStart.checked, sound:soundOn.checked, notify:notifyOn.checked, workUrl:workUrl.value.trim(), relaxUrl:relaxUrl.value.trim() };
     localStorage.setItem(LS_KEY, JSON.stringify(state));
+  }
+  function applyTheme(theme){
+    const t=THEMES[theme]||THEMES.ippo;
+    // only override if no custom URL
+    if(!workUrl.value.trim()) workBg.src=t.work;
+    else workBg.src=workUrl.value.trim();
+    if(!relaxUrl.value.trim()) relaxBg.src=t.relax;
+    else relaxBg.src=relaxUrl.value.trim();
+    workBg.onerror=()=>{ workBg.src=t.workFallback; };
+    relaxBg.onerror=()=>{ relaxBg.src=t.relaxFallback; };
+  }
+  function applyThemeActive(){
+    const cur=state.theme||'ippo';
+    document.querySelectorAll('.theme-pill').forEach(b=> b.classList.toggle('active', b.dataset.theme===cur));
+    document.querySelectorAll('[data-theme].chip').forEach(b=> b.classList.toggle('active', b.dataset.theme===cur));
+  }
+  function setTheme(theme){
+    state.theme=theme;
+    applyTheme(theme);
+    applyThemeActive();
+    save();
+    render();
   }
   function clamp(n,min,max){ return Math.max(min, Math.min(max,n)); }
   function fmt(s){ const m=Math.floor(s/60), sec=s%60; return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`; }
 
   function syncTotals(){
     save();
-    if(!running){
-      total = (mode==='work'? state.work: state.relax)*60;
-      remaining = total;
-      pausedRemaining=null;
-    } else {
-      total = (mode==='work'? state.work: state.relax)*60;
-    }
-    cycleText.textContent = `${state.work} / ${state.relax}`;
-    applyPresetActive();
-    render();
+    if(!running){ total=(mode==='work'?state.work:state.relax)*60; remaining=total; pausedRemaining=null; }
+    else total=(mode==='work'?state.work:state.relax)*60;
+    applyPresetActive(); render();
   }
 
   function render(){
-    digits.textContent = fmt(remaining);
-    document.title = `${fmt(remaining)} — ${mode==='work'?'WORK':'RELAX'} · Animedoro`;
-    const pct = total? remaining/total : 0;
-    fill.style.transform = `scaleX(${pct})`;
-
-    const isWork = mode==='work';
+    digits.textContent=fmt(remaining);
+    document.title=`${fmt(remaining)} — ${mode==='work'?'WORK':'WATCH'} · Animedoro`;
+    const isWork=mode==='work';
     document.body.classList.toggle('mode-relax', !isWork);
     bg.classList.toggle('relax', !isWork);
     bg.classList.toggle('paused', !running && pausedRemaining!==null);
     workBg.classList.toggle('active', isWork);
     relaxBg.classList.toggle('active', !isWork);
-
-    modePill.textContent = isWork ? '🥊 WORK' : '☕ RELAX';
-    modePill.style.background = isWork ? 'rgba(229,57,53,.92)' : 'rgba(38,166,154,.92)';
-    hint.textContent = isWork ? 'Focus — hands up' : 'Relax — you earned it';
-    quote.textContent = isWork ? '“What does it mean to be strong?” — Keep punching.' : '“A break is part of training.” — Kamogawa';
-    nextUp.textContent = `next: ${isWork? `relax ${state.relax}:00` : `work ${state.work}:00`}`;
-    roundText.innerHTML = `Round <strong>${currentRound}</strong> · ${roundsCompleted} done`;
-    cycleText.textContent = `${state.work} / ${state.relax}`;
-
-    startBtn.textContent = running ? '⏸ Pause' : (pausedRemaining!==null ? '▶ Resume' : '▶ Start');
-    // keep primary white for both, no disable needed; toggle is start/pause single button
+    workTab.classList.toggle('active', isWork);
+    workTab.classList.toggle('outline', !isWork);
+    watchTab.classList.toggle('active', !isWork);
+    watchTab.classList.toggle('outline', isWork);
+    startBtn.textContent=running ? 'Pause' : (pausedRemaining!==null ? 'Resume' : 'Start');
   }
 
   function tick(){
-    const secLeft = Math.max(0, Math.ceil((endAt - Date.now())/1000));
-    remaining = secLeft;
-    render();
-    if(secLeft<=0){
-      clearInterval(timerId); timerId=null; running=false; pausedRemaining=null;
-      onPhaseEnd();
-    }
+    const secLeft=Math.max(0, Math.ceil((endAt - Date.now())/1000));
+    remaining=secLeft; render();
+    if(secLeft<=0){ clearInterval(timerId); timerId=null; running=false; pausedRemaining=null; onPhaseEnd(); }
   }
   function start(){
-    if(running) return pause(); // toggle
+    if(running) return pause();
     save();
-    if(pausedRemaining!==null){ remaining = pausedRemaining; pausedRemaining=null; }
-    if(remaining<=0) remaining = total;
-    endAt = Date.now() + remaining*1000;
-    running = true;
-    render();
-    timerId = setInterval(tick, 250);
+    if(pausedRemaining!==null){ remaining=pausedRemaining; pausedRemaining=null; }
+    if(remaining<=0) remaining=total;
+    endAt=Date.now()+remaining*1000; running=true; render();
+    timerId=setInterval(tick,250);
   }
   function pause(){
     if(!running) return;
     clearInterval(timerId); timerId=null; running=false;
-    const secLeft = Math.max(0, Math.ceil((endAt - Date.now())/1000));
-    remaining = secLeft; pausedRemaining = secLeft;
-    render();
+    const secLeft=Math.max(0, Math.ceil((endAt - Date.now())/1000));
+    remaining=secLeft; pausedRemaining=secLeft; render();
   }
   function reset(){
     clearInterval(timerId); timerId=null; running=false; pausedRemaining=null;
-    total = (mode==='work'? state.work: state.relax)*60;
-    remaining = total;
-    render();
-  }
-  function skip(){
-    clearInterval(timerId); timerId=null; running=false; pausedRemaining=null;
-    switchMode(false);
-    if(autoStart.checked) { // auto start next
-      endAt = Date.now() + remaining*1000; running=true; timerId=setInterval(tick,250); render();
-    } else render();
+    total=(mode==='work'?state.work:state.relax)*60; remaining=total; render();
   }
   function switchMode(withNotify=true){
     if(mode==='work'){ mode='relax'; roundsCompleted++; }
     else { mode='work'; currentRound++; }
-    total = (mode==='work'? state.work: state.relax)*60;
-    remaining = total;
-    if(withNotify){
-      if(soundOn.checked) playBell(mode);
-      if(notifyOn.checked) fireNotification(mode);
-      flashTitle();
-    }
+    total=(mode==='work'?state.work:state.relax)*60; remaining=total;
+    if(withNotify){ if(soundOn.checked) playBell(mode); if(notifyOn.checked) fireNotification(mode); flashTitle(); }
     render();
   }
   function onPhaseEnd(){
-    const next = mode==='work' ? 'relax' : 'work';
+    const next=mode==='work'?'relax':'work';
     if(soundOn.checked) playBell(next);
     if(notifyOn.checked) fireNotification(next);
     switchMode(false);
-    if(autoStart.checked){
-      setTimeout(()=>{ endAt=Date.now()+remaining*1000; running=true; timerId=setInterval(tick,250); render(); }, 600);
-    }
+    if(autoStart.checked){ setTimeout(()=>{ endAt=Date.now()+remaining*1000; running=true; timerId=setInterval(tick,250); render(); }, 600); }
   }
 
   let audioCtx=null;
   function playBell(nextMode){
     try{
-      if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+      if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)();
       if(audioCtx.state==='suspended') audioCtx.resume();
-      const now=audioCtx.currentTime;
-      const freq = nextMode==='work'?880:660;
+      const now=audioCtx.currentTime; const freq=nextMode==='work'?880:660;
       [0,0.35].forEach((off,i)=>{
         const o=audioCtx.createOscillator(), g=audioCtx.createGain();
         o.type='sine'; o.frequency.value=freq - i*30;
@@ -578,16 +375,15 @@
   }
   function fireNotification(nextMode){
     if(typeof Notification==='undefined' || Notification.permission!=='granted') return;
-    const title = nextMode==='work' ? '🥊 Back to work!' : '☕ Break time!';
-    const body = nextMode==='work' ? `Work ${state.work}m — hands up.` : `Relax ${state.relax}m — you earned it.`;
-    try{ new Notification(title, { body }); }catch{}
+    const title=nextMode==='work'?'🥊 Back to work!':'📺 Break time!';
+    const body=nextMode==='work'?`Work ${state.work}m — hands up.`:`Watch ${state.relax}m — you earned it.`;
+    try{ new Notification(title,{body}); }catch{}
   }
   let flashId=null;
   function flashTitle(){
     if(flashId) clearInterval(flashId);
-    let on=true, c=0;
-    flashId=setInterval(()=>{
-      document.title = on ? `★ ${mode==='work'?'FIGHT!':'RELAX!'} — ${fmt(remaining)}` : `${fmt(remaining)} — ${mode==='work'?'WORK':'RELAX'} · Animedoro`;
+    let on=true,c=0; flashId=setInterval(()=>{
+      document.title=on?`★ ${mode==='work'?'FIGHT!':'WATCH!'} — ${fmt(remaining)}`:`${fmt(remaining)} — ${mode==='work'?'WORK':'WATCH'} · Animedoro`;
       on=!on; if(++c>6){ clearInterval(flashId); flashId=null; render(); }
     },500);
   }
@@ -598,27 +394,44 @@
     });
   }
 
-  // modal
   function openModal(){ modal.classList.add('open'); modal.setAttribute('aria-hidden','false'); updateSplitPreview(); }
   function closeModal(){ modal.classList.remove('open'); modal.setAttribute('aria-hidden','true'); save(); syncTotals(); updateSplitPreview(); }
   settingsBtn.addEventListener('click', openModal);
   closeBtn.addEventListener('click', closeModal);
-  modal.addEventListener('click', (e)=>{ if(e.target===modal) closeModal(); });
+  modal.addEventListener('click', e=>{ if(e.target===modal) closeModal(); });
+  digits.addEventListener('click', openModal);
+  // also allow tapping the hint
+  digitsHint.addEventListener('click', openModal);
+  // show hint briefly on hover/first load
+  let hintShown=false;
+  digits.addEventListener('mouseenter', ()=>{ if(!hintShown){ digitsHint.classList.add('show'); hintShown=true; setTimeout(()=>digitsHint.classList.remove('show'), 1800); }});
 
-  // controls
+  // mode tabs — manual switch
+  workTab.addEventListener('click', ()=>{
+    if(mode!=='work'){ mode='work'; total=state.work*60; remaining=total; pausedRemaining=null; if(running){ clearInterval(timerId); running=false; } render(); }
+  });
+  watchTab.addEventListener('click', ()=>{
+    if(mode!=='relax'){ mode='relax'; total=state.relax*60; remaining=total; pausedRemaining=null; if(running){ clearInterval(timerId); running=false; } render(); }
+  });
+
+  // theme switch — Ippo / Initial D
+  document.querySelectorAll('.theme-pill, [data-theme].chip').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const th=btn.dataset.theme;
+      if(THEMES[th]) setTheme(th);
+    });
+  });
+
   startBtn.addEventListener('click', start);
   resetBtn.addEventListener('click', reset);
-  skipBtn.addEventListener('click', skip);
 
   const workMinus=$('#workMinus'), workPlus=$('#workPlus'), relaxMinus=$('#relaxMinus'), relaxPlus=$('#relaxPlus');
   const workPart=$('#workPart'), breakPart=$('#breakPart'), splitLabel=$('#splitLabel');
   function updateSplitPreview(){
     const w=clamp(+workInput.value||0,1,120), r=clamp(+relaxInput.value||0,1,60);
-    const tot=w+r;
-    const wPct= (w/tot*100).toFixed(1), rPct=(r/tot*100).toFixed(1);
+    const tot=w+r; const wPct=(w/tot*100).toFixed(1), rPct=(r/tot*100).toFixed(1);
     workPart.style.width=wPct+'%'; breakPart.style.width=rPct+'%';
-    splitLabel.innerHTML=`<strong>${w}m</strong> work + <strong>${r}m</strong> break = <strong>${tot}m</strong> cycle`;
-    cycleText.textContent=`${w} / ${r}`;
+    splitLabel.innerHTML=`<strong>${w}m</strong> work + <strong>${r}m</strong> watch = <strong>${tot}m</strong> cycle`;
   }
   workInput.addEventListener('change', ()=>{ syncTotals(); updateSplitPreview(); });
   relaxInput.addEventListener('change', ()=>{ syncTotals(); updateSplitPreview(); });
@@ -629,45 +442,37 @@
   relaxMinus.addEventListener('click', ()=>{ relaxInput.value=clamp((+relaxInput.value||20)-5,1,60); syncTotals(); updateSplitPreview(); });
   relaxPlus.addEventListener('click', ()=>{ relaxInput.value=clamp((+relaxInput.value||20)+5,1,60); syncTotals(); updateSplitPreview(); });
   [autoStart,soundOn,notifyOn].forEach(el=> el.addEventListener('change', save));
-
   notifyPermBtn.addEventListener('click', async()=>{
     if(typeof Notification==='undefined'){ alert('Notifications not supported'); return; }
     const p=await Notification.requestPermission();
     if(p==='granted'){ notifyOn.checked=true; save(); notifyPermBtn.textContent='✓ Enabled'; setTimeout(()=>notifyPermBtn.textContent='Enable Notify',1500); }
     else alert('Permission: '+p);
   });
-
   workUrl.addEventListener('change', ()=>{
     const v=workUrl.value.trim();
-    if(v){ workBg.src=v; workBg.onerror=()=>{ workBg.src='https://c.tenor.com/esQzZcKf6FwAAAAC/dempsey-roll.gif'; alert('Work gif failed to load — reverted.'); }; }
-    else workBg.src='assets/work.gif';
-    save();
+    const t=THEMES[state.theme||'ippo'];
+    if(v){ workBg.src=v; workBg.onerror=()=>{ workBg.src=t.workFallback; alert('Work gif failed — reverted to theme default.'); }; }
+    else { workBg.src=t.work; workBg.onerror=()=>{ workBg.src=t.workFallback; }; } save();
   });
   relaxUrl.addEventListener('change', ()=>{
     const v=relaxUrl.value.trim();
-    if(v){ relaxBg.src=v; relaxBg.onerror=()=>{ relaxBg.src='https://c.tenor.com/dhiZs4RULI0AAAAC/ippo-hajime-no-ippo.gif'; alert('Relax gif failed — reverted.'); }; }
-    else relaxBg.src='assets/relax.gif';
-    save();
+    const t=THEMES[state.theme||'ippo'];
+    if(v){ relaxBg.src=v; relaxBg.onerror=()=>{ relaxBg.src=t.relaxFallback; alert('Watch gif failed — reverted to theme default.'); }; }
+    else { relaxBg.src=t.relax; relaxBg.onerror=()=>{ relaxBg.src=t.relaxFallback; }; } save();
   });
-
   document.querySelectorAll('.chip[data-preset]').forEach(ch=>{
     ch.addEventListener('click', ()=>{
       const [w,r]=ch.dataset.preset.split('-').map(Number);
       workInput.value=w; relaxInput.value=r; save(); syncTotals(); updateSplitPreview();
     });
   });
-  // initial preview sync (after definitions)
   updateSplitPreview();
-
-  document.addEventListener('keydown', (e)=>{
+  document.addEventListener('keydown', e=>{
     if(e.target.tagName==='INPUT') return;
     if(e.code==='Space'){ e.preventDefault(); start(); }
     if(e.key==='r'||e.key==='R') reset();
-    if(e.key==='s'||e.key==='S') skip();
     if(e.key==='Escape' && modal.classList.contains('open')) closeModal();
   });
-
-  // keep title fresh even when hidden (Date-based so no drift)
 })();
 </script>
 </body>
