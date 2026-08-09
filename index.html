@@ -52,10 +52,12 @@
     font-variant-numeric:tabular-nums;
     font-weight:900;
     font-size:clamp(84px, 18vw, 148px);
-    line-height:.9;
+    line-height:1;
     letter-spacing:-.05em;
     color:#fff;
     text-shadow:0 8px 32px rgba(0,0,0,.45);
+    overflow:visible;
+    padding:0.06em 0;
   }
   .digits{
     cursor:pointer;
@@ -78,7 +80,7 @@
     display:none;
   }
   .digits-input:focus{ outline:none; }
-  .digits-wrap{ display:inline-flex; align-items:baseline; justify-content:center; gap:0; }
+  .digits-wrap{ display:inline-flex; align-items:baseline; justify-content:center; gap:0; overflow:visible; padding:0.08em 0; }
 
   .controls-row{ margin-top:22px; display:flex;gap:12px;align-items:center;justify-content:center }
   .start-pill{
