@@ -176,7 +176,10 @@
     <button class="pill outline" id="watchTab">📺 Watch</button>
   </div>
   <div class="digits-wrap" id="digitsWrap">
-    <span id="digitsMM" class="digits" title="Click MM to edit minutes — no popup" style="cursor:pointer">40</span><input class="digits-input" id="digitsInput" type="text" inputmode="numeric" autocomplete="off" aria-label="Edit minutes" placeholder="" style="display:none"><span id="digitsSep" class="digits">:</span><span id="digitsSS" class="digits">00</span>
+    <span style="position:relative; display:inline-block; min-width:2.1em; text-align:right;">
+      <span id="digitsMM" class="digits" title="Click MM to edit minutes — no popup" style="cursor:pointer">40</span>
+      <input class="digits-input" id="digitsInput" type="text" inputmode="numeric" autocomplete="off" aria-label="Edit minutes" placeholder="" style="display:none; position:absolute; inset:0; width:100%; text-align:right;">
+    </span><span id="digitsSep" class="digits">:</span><span id="digitsSS" class="digits">00</span>
   </div>
   <div class="digits-hint" id="digitsHint">click MM to edit minutes — no popup</div>
   <div class="controls-row">
@@ -447,14 +450,13 @@
   settingsBtn.addEventListener('click', openModal);
   closeBtn.addEventListener('click', closeModal);
   modal.addEventListener('click', e=>{ if(e.target===modal) closeModal(); });
-  // inline edit: click MM, type 50 -> updates to 50:00 with no popup, no box — edit in place the clock
+  // inline edit: click MM, type 50 -> updates to 50:00 with no popup, no box — edit in place, position locked
   function enterEdit(){
     if(editing) return;
     if(running) pause();
     editing=true;
-    if(digitsMM) digitsMM.style.display='none';
-    digitsInput.style.display='inline-block';
-    digitsInput.style.width = '3ch';
+    if(digitsMM) digitsMM.style.visibility='hidden';
+    digitsInput.style.display='block';
     const cur = mode==='work' ? state.work : state.relax;
     digitsInput.value = String(cur);
     digitsInput.focus();
@@ -477,12 +479,11 @@
     }
     editing=false;
     digitsInput.style.display='none';
-    if(digitsMM) digitsMM.style.display='inline';
+    if(digitsMM) digitsMM.style.visibility='visible';
     if(digitsHint) digitsHint.style.opacity='';
     render();
   }
   if(digitsMM) digitsMM.addEventListener('click', enterEdit);
-  // fallback: clicking anywhere on time also edits
   if(digitsWrap) digitsWrap.addEventListener('click', e=>{
     if(e.target===digitsWrap || e.target===digitsSep || e.target===digitsSS) enterEdit();
   });
@@ -492,6 +493,8 @@
     if(e.key==='Enter'){ e.preventDefault(); exitEdit(true); }
     if(e.key==='Escape'){ e.preventDefault(); exitEdit(false); }
   });
+  // submit when cursor leaves the time area (no hover)
+  if(digitsWrap) digitsWrap.addEventListener('mouseleave', ()=>{ if(editing) exitEdit(true); });
   // show hint briefly on hover/first load
   let hintShown=false;
   digits.addEventListener('mouseenter', ()=>{ if(!hintShown && !editing){ digitsHint.classList.add('show'); hintShown=true; setTimeout(()=>digitsHint.classList.remove('show'), 1800); }});
