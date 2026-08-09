@@ -161,6 +161,18 @@
   .theme-pill.active{background:#fff;color:#111;border-color:#fff;box-shadow:0 4px 14px rgba(0,0,0,.22)}
   .footer-link{position:fixed;bottom:10px;left:50%;transform:translateX(-50%);z-index:3;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.62);background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.12);padding:6px 10px;border-radius:999px;backdrop-filter:blur(8px)}
   .footer-link a{color:#fff;text-decoration:none;border-bottom:1px dotted rgba(255,255,255,.5)}
+  .music-widget{ position:fixed; top:16px; right:16px; z-index:4; }
+  .music-btn{ width:36px; height:36px; border-radius:999px; border:1px solid rgba(255,255,255,.18); background:rgba(0,0,0,.28); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); color:#fff; cursor:pointer; display:grid; place-items:center; font-size:14px; }
+  .music-panel{ position:absolute; top:44px; right:0; width:260px; background:rgba(18,18,20,.94); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); border:1px solid rgba(255,255,255,.12); border-radius:16px; padding:12px; box-shadow:0 20px 60px rgba(0,0,0,.5); display:none; }
+  .music-panel.open{ display:block; }
+  .music-head{ display:flex; justify-content:space-between; align-items:center; font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:#9a9a9e; font-weight:800; margin-bottom:8px; }
+  .music-close{ border:none; background:transparent; color:#fff; cursor:pointer; font-size:14px; }
+  .music-controls{ display:flex; align-items:center; gap:8px; margin:8px 0; }
+  .music-play{ width:32px; height:32px; border-radius:999px; border:1px solid rgba(255,255,255,.2); background:#fff; color:#111; cursor:pointer; display:grid; place-items:center; font-weight:800; font-size:12px; flex-shrink:0; }
+  .music-time{ font-size:10px; color:#9a9a9e; font-variant-numeric:tabular-nums; min-width:36px; text-align:right; }
+  #musicVolume{ flex:1; accent-color:#fff; height:4px; }
+  .music-select{ width:100%; background:#0e0e10; border:1px solid #2e2e32; color:#fff; padding:8px; border-radius:8px; font-size:11px; font-weight:600; outline:none; }
+  .music-hint{ font-size:10px; color:#9a9a9e; margin-top:6px; text-align:center; letter-spacing:.04em; }
 </style>
 </head>
 <body>
@@ -171,6 +183,24 @@
 </div>
 
 <div class="brand">ANI<span>MEDORO</span> × IPPO</div>
+<div class="music-widget" id="musicWidget">
+  <button id="musicToggle" class="music-btn" aria-label="Classical music" title="Classical music">♫</button>
+  <div id="musicPanel" class="music-panel">
+    <div class="music-head"><span>Classical</span><button id="musicClose" class="music-close">✕</button></div>
+    <audio id="classicalAudio" preload="metadata" loop></audio>
+    <div class="music-controls">
+      <button id="musicPlay" class="music-play">▶</button>
+      <input type="range" id="musicVolume" min="0" max="1" step="0.05" value="0.5">
+      <span id="musicTime" class="music-time">0:00</span>
+    </div>
+    <select id="musicSelect" class="music-select">
+      <option value="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3">Bach — Air</option>
+      <option value="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3">Beethoven — Moonlight</option>
+      <option value="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3">Mozart — Eine kleine</option>
+    </select>
+    <div class="music-hint">Loops • volume saves • top-right</div>
+  </div>
+</div>
 
 <main class="stage" id="stage">
   <div class="mode-switch" id="modeSwitch">
@@ -263,8 +293,8 @@
   const modal=$('#modal'), closeBtn=$('#closeBtn');
   const LS_KEY='animedoro-ippo-v3';
   const THEMES={
-    ippo:{ label:'🥊 Ippo', work:'assets/work.gif', relax:'assets/relax.gif', workFallback:'https://c.tenor.com/esQzZcKf6FwAAAAC/dempsey-roll.gif', relaxFallback:'https://c.tenor.com/dhiZs4RULI0AAAAC/ippo-hajime-no-ippo.gif' },
-    initiald:{ label:'🏎️ Initial D', work:'assets/initiald-work.gif', relax:'assets/initiald-relax.gif', workFallback:'https://c.tenor.com/8I_13j-yo0UAAAAC/initiald-car.gif', relaxFallback:'https://c.tenor.com/1osmNTdrmukAAAAC/eurobeat-driving.gif' }
+    ippo:{ label:'🥊 Ippo', work:'assets/work.gif', relax:'assets/relax.gif', workFallback:'https://c.tenor.com/esQzZcKf6FwAAAAC/dempsey-roll.gif', relaxFallback:'https://c.tenor.com/nv1KU4OqajcAAAAC/ippo-shocked-reaction-ippo-fish-eye-reaction.gif' },
+    initiald:{ label:'🏎️ Initial D', work:'assets/initiald-work.gif', relax:'assets/initiald-relax.gif', workFallback:'https://c.tenor.com/8I_13j-yo0UAAAAC/initiald-car.gif', relaxFallback:'https://c.tenor.com/1glY_gyV1zwAAAAC/initial-d-takumi-fujiwara.gif' }
   };
   const DEFAULTS={theme:'ippo', work:40, relax:20, autoStart:true, sound:true, notify:true, workUrl:'', relaxUrl:'', totalWorkSec:0, totalBreakSec:0};
   let state=load();
@@ -517,6 +547,35 @@
   themeSelect.addEventListener('change', ()=>{
     const th=themeSelect.value;
     if(THEMES[th]) setTheme(th);
+  });
+
+  // music widget — top right classical controls
+  const musicWidget=$('#musicWidget'), musicToggle=$('#musicToggle'), musicPanel=$('#musicPanel'), musicClose=$('#musicClose'), classicalAudio=$('#classicalAudio'), musicPlay=$('#musicPlay'), musicVolume=$('#musicVolume'), musicSelect=$('#musicSelect'), musicTime=$('#musicTime');
+  const MUSIC_LS='animedoro-music-v1';
+  function loadMusic(){ try{ const v=JSON.parse(localStorage.getItem(MUSIC_LS)||'null'); return v||{}; }catch{ return {}; } }
+  function saveMusic(o){ localStorage.setItem(MUSIC_LS, JSON.stringify(o)); }
+  let musicState=loadMusic();
+  if(musicState.volume!=null) musicVolume.value=musicState.volume;
+  if(musicState.track) musicSelect.value=musicState.track;
+  classicalAudio.src=musicSelect.value;
+  classicalAudio.volume=parseFloat(musicVolume.value);
+  classicalAudio.loop=true;
+  function updateMusicTime(){ const cur=classicalAudio.currentTime||0; const m=Math.floor(cur/60), s=String(Math.floor(cur%60)).padStart(2,'0'); if(musicTime) musicTime.textContent=`${m}:${s}`; }
+  setInterval(updateMusicTime, 500);
+  musicToggle.addEventListener('click', ()=> musicPanel.classList.toggle('open'));
+  musicClose.addEventListener('click', ()=> musicPanel.classList.remove('open'));
+  document.addEventListener('click', e=>{ if(musicPanel.classList.contains('open') && !musicWidget.contains(e.target)) musicPanel.classList.remove('open'); });
+  musicPlay.addEventListener('click', async()=>{
+    if(classicalAudio.paused){ try{ await classicalAudio.play(); musicPlay.textContent='⏸'; }catch{} } else { classicalAudio.pause(); musicPlay.textContent='▶'; }
+  });
+  classicalAudio.addEventListener('play', ()=> musicPlay.textContent='⏸');
+  classicalAudio.addEventListener('pause', ()=> musicPlay.textContent='▶');
+  musicVolume.addEventListener('input', ()=>{ classicalAudio.volume=parseFloat(musicVolume.value); saveMusic({volume: musicVolume.value, track: musicSelect.value}); });
+  musicSelect.addEventListener('change', async()=>{
+    const wasPlaying=!classicalAudio.paused;
+    classicalAudio.src=musicSelect.value;
+    saveMusic({volume: musicVolume.value, track: musicSelect.value});
+    if(wasPlaying){ try{ await classicalAudio.play(); }catch{} }
   });
 
   startBtn.addEventListener('click', start);
