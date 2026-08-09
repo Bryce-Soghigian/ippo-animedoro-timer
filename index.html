@@ -172,6 +172,9 @@
   .music-time{ font-size:10px; color:#9a9a9e; font-variant-numeric:tabular-nums; min-width:36px; text-align:right; }
   #musicVolume{ flex:1; accent-color:#fff; height:4px; }
   .music-select{ width:100%; background:#0e0e10; border:1px solid #2e2e32; color:#fff; padding:8px; border-radius:8px; font-size:11px; font-weight:600; outline:none; }
+  .music-track{ font-size:11px; font-weight:700; color:#fff; text-align:center; margin-top:8px; letter-spacing:.04em; min-height:14px; }
+  .music-skip{ flex:1; padding:8px; border-radius:8px; border:1px solid #2e2e32; background:#0e0e10; color:#fff; cursor:pointer; font-size:12px; font-weight:700; }
+  .music-skip:active{ background:#1e1e22; }
   .music-hint{ font-size:10px; color:#9a9a9e; margin-top:6px; text-align:center; letter-spacing:.04em; }
 </style>
 </head>
@@ -193,12 +196,12 @@
       <input type="range" id="musicVolume" min="0" max="1" step="0.05" value="0.5">
       <span id="musicTime" class="music-time">0:00</span>
     </div>
-    <select id="musicSelect" class="music-select">
-      <option value="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3">Bach — Air</option>
-      <option value="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3">Beethoven — Moonlight</option>
-      <option value="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3">Mozart — Eine kleine</option>
-    </select>
-    <div class="music-hint">Loops • volume saves • top-right</div>
+    <div id="musicTrack" class="music-track">Bach — Air</div>
+    <div style="display:flex; gap:8px; margin-top:8px;">
+      <button id="musicPrev" class="music-skip" aria-label="Previous">⏮</button>
+      <button id="musicNext" class="music-skip" aria-label="Next">⏭</button>
+    </div>
+    <div class="music-hint">Skip • loops • volume saves</div>
   </div>
 </div>
 
@@ -549,19 +552,33 @@
     if(THEMES[th]) setTheme(th);
   });
 
-  // music widget — top right classical controls
-  const musicWidget=$('#musicWidget'), musicToggle=$('#musicToggle'), musicPanel=$('#musicPanel'), musicClose=$('#musicClose'), classicalAudio=$('#classicalAudio'), musicPlay=$('#musicPlay'), musicVolume=$('#musicVolume'), musicSelect=$('#musicSelect'), musicTime=$('#musicTime');
+  // music widget — top right classical with skip (no dropdown)
+  const musicWidget=$('#musicWidget'), musicToggle=$('#musicToggle'), musicPanel=$('#musicPanel'), musicClose=$('#musicClose'), classicalAudio=$('#classicalAudio'), musicPlay=$('#musicPlay'), musicVolume=$('#musicVolume'), musicTime=$('#musicTime'), musicTrack=$('#musicTrack'), musicPrev=$('#musicPrev'), musicNext=$('#musicNext');
+  const TRACKS=[
+    {title:"Bach — Air", src:"https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"},
+    {title:"Beethoven — Moonlight", src:"https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3"},
+    {title:"Mozart — Eine kleine", src:"https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3"}
+  ];
   const MUSIC_LS='animedoro-music-v1';
   function loadMusic(){ try{ const v=JSON.parse(localStorage.getItem(MUSIC_LS)||'null'); return v||{}; }catch{ return {}; } }
   function saveMusic(o){ localStorage.setItem(MUSIC_LS, JSON.stringify(o)); }
   let musicState=loadMusic();
+  let curIdx = Number.isInteger(musicState.idx) ? musicState.idx : 0;
+  if(curIdx<0||curIdx>=TRACKS.length) curIdx=0;
   if(musicState.volume!=null) musicVolume.value=musicState.volume;
-  if(musicState.track) musicSelect.value=musicState.track;
-  classicalAudio.src=musicSelect.value;
+  classicalAudio.src=TRACKS[curIdx].src;
+  if(musicTrack) musicTrack.textContent=TRACKS[curIdx].title;
   classicalAudio.volume=parseFloat(musicVolume.value);
   classicalAudio.loop=true;
   function updateMusicTime(){ const cur=classicalAudio.currentTime||0; const m=Math.floor(cur/60), s=String(Math.floor(cur%60)).padStart(2,'0'); if(musicTime) musicTime.textContent=`${m}:${s}`; }
   setInterval(updateMusicTime, 500);
+  async function setTrack(idx, autoPlay){
+    curIdx=(idx+TRACKS.length)%TRACKS.length;
+    classicalAudio.src=TRACKS[curIdx].src;
+    if(musicTrack) musicTrack.textContent=TRACKS[curIdx].title;
+    saveMusic({volume: musicVolume.value, idx: curIdx});
+    if(autoPlay){ try{ await classicalAudio.play(); musicPlay.textContent='⏸'; }catch{} }
+  }
   musicToggle.addEventListener('click', ()=> musicPanel.classList.toggle('open'));
   musicClose.addEventListener('click', ()=> musicPanel.classList.remove('open'));
   document.addEventListener('click', e=>{ if(musicPanel.classList.contains('open') && !musicWidget.contains(e.target)) musicPanel.classList.remove('open'); });
@@ -570,13 +587,9 @@
   });
   classicalAudio.addEventListener('play', ()=> musicPlay.textContent='⏸');
   classicalAudio.addEventListener('pause', ()=> musicPlay.textContent='▶');
-  musicVolume.addEventListener('input', ()=>{ classicalAudio.volume=parseFloat(musicVolume.value); saveMusic({volume: musicVolume.value, track: musicSelect.value}); });
-  musicSelect.addEventListener('change', async()=>{
-    const wasPlaying=!classicalAudio.paused;
-    classicalAudio.src=musicSelect.value;
-    saveMusic({volume: musicVolume.value, track: musicSelect.value});
-    if(wasPlaying){ try{ await classicalAudio.play(); }catch{} }
-  });
+  musicVolume.addEventListener('input', ()=>{ classicalAudio.volume=parseFloat(musicVolume.value); saveMusic({volume: musicVolume.value, idx: curIdx}); });
+  musicPrev.addEventListener('click', ()=> setTrack(curIdx-1, !classicalAudio.paused));
+  musicNext.addEventListener('click', ()=> setTrack(curIdx+1, !classicalAudio.paused));
 
   startBtn.addEventListener('click', start);
   resetBtn.addEventListener('click', reset);
