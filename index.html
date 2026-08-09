@@ -73,19 +73,18 @@
     line-height:.9;
     letter-spacing:-.05em;
     color:#fff;
-    background:rgba(0,0,0,.38);
-    border:2px solid rgba(255,255,255,.38);
-    border-radius:16px;
-    padding:6px 18px;
+    background:transparent;
+    border:none;
+    border-radius:0;
+    padding:0;
     text-align:center;
-    width:340px;
-    max-width:86vw;
-    backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+    width:2ch;
+    max-width:40vw;
     outline:none;
     text-shadow:0 8px 32px rgba(0,0,0,.45);
     display:none;
   }
-  .digits-input:focus{ border-color:rgba(255,255,255,.72); background:rgba(0,0,0,.52); }
+  .digits-wrap{ display:inline-flex; align-items:baseline; justify-content:center; gap:0; }
 
   .controls-row{ margin-top:22px; display:flex;gap:12px;align-items:center;justify-content:center }
   .start-pill{
@@ -182,9 +181,10 @@
     <button class="pill active" id="workTab">📚 Work</button>
     <button class="pill outline" id="watchTab">📺 Watch</button>
   </div>
-  <div class="digits" id="digits" title="Click to type — no menu">40:00</div>
-  <input class="digits-input" id="digitsInput" type="text" inputmode="numeric" autocomplete="off" aria-label="Type minutes" placeholder="50">
-  <div class="digits-hint" id="digitsHint">click time to type — no menu</div>
+  <div class="digits-wrap" id="digitsWrap">
+    <span id="digitsMM" class="digits" title="Click MM to edit minutes — no popup" style="cursor:pointer">40</span><input class="digits-input" id="digitsInput" type="text" inputmode="numeric" autocomplete="off" aria-label="Edit minutes" placeholder="" style="display:none"><span id="digitsSep" class="digits">:</span><span id="digitsSS" class="digits">00</span>
+  </div>
+  <div class="digits-hint" id="digitsHint">click MM to edit minutes — no popup</div>
   <div class="controls-row">
     <button class="start-pill" id="startBtn">Start</button>
     <button class="icon-btn" id="resetBtn" aria-label="Reset" title="Reset (R)">
@@ -253,7 +253,7 @@
 (() => {
   const $=s=>document.querySelector(s);
   const bg=$('#bg'), workBg=$('#workBg'), relaxBg=$('#relaxBg');
-  const digits=$('#digits'), digitsHint=$('#digitsHint');
+  const digits=$('#digits'), digitsMM=$('#digitsMM'), digitsSep=$('#digitsSep'), digitsSS=$('#digitsSS'), digitsWrap=$('#digitsWrap'), digitsInput=$('#digitsInput'), digitsHint=$('#digitsHint');
   const workTab=$('#workTab'), watchTab=$('#watchTab');
   const startBtn=$('#startBtn'), resetBtn=$('#resetBtn'), settingsBtn=$('#settingsBtn');
   const workInput=$('#workInput'), relaxInput=$('#relaxInput');
@@ -278,6 +278,7 @@
   let remaining=total;
   let roundsCompleted=0, currentRound=1;
   let running=false, timerId=null, endAt=null, pausedRemaining=null;
+  let editing=false;
 
   workInput.value=state.work; relaxInput.value=state.relax;
   autoStart.checked=state.autoStart; soundOn.checked=state.sound; notifyOn.checked=state.notify;
@@ -347,8 +348,14 @@
   }
 
   function render(){
-    digits.textContent=fmt(remaining);
-    document.title=`${fmt(remaining)} — ${mode==='work'?'WORK':'WATCH'} · Animedoro`;
+    const mm = String(Math.floor(remaining/60)).padStart(2,'0');
+    const ss = String(remaining%60).padStart(2,'0');
+    if(!editing){
+      if(digitsMM) digitsMM.textContent=mm;
+      if(digitsSS) digitsSS.textContent=ss;
+      if(digits && digitsMM==null) digits.textContent=`${mm}:${ss}`;
+    }
+    document.title=`${mm}:${ss} — ${mode==='work'?'WORK':'WATCH'} · Animedoro`;
     const isWork=mode==='work';
     document.body.classList.toggle('mode-relax', !isWork);
     bg.classList.toggle('relax', !isWork);
@@ -446,26 +453,24 @@
   settingsBtn.addEventListener('click', openModal);
   closeBtn.addEventListener('click', closeModal);
   modal.addEventListener('click', e=>{ if(e.target===modal) closeModal(); });
-  // inline edit: click time, type 50 -> updates to 50:00 with no menu
-  const digitsInput=$('#digitsInput');
-  let editing=false;
+  // inline edit: click MM, type 50 -> updates to 50:00 with no popup, no box — edit in place the clock
   function enterEdit(){
     if(editing) return;
     if(running) pause();
     editing=true;
-    digits.style.display='none';
-    digitsHint.style.display='none';
-    digitsInput.style.display='block';
+    if(digitsMM) digitsMM.style.display='none';
+    digitsInput.style.display='inline-block';
+    digitsInput.style.width = '3ch';
     const cur = mode==='work' ? state.work : state.relax;
     digitsInput.value = String(cur);
     digitsInput.focus();
     digitsInput.select();
+    if(digitsHint) digitsHint.style.opacity='0';
   }
   function exitEdit(commit){
     if(!editing) return;
     if(commit){
       const raw = digitsInput.value.trim();
-      // allow "50", "50:00", "50m" — extract leading number
       const m = parseInt(raw, 10);
       if(!isNaN(m)){
         const max = mode==='work' ? 120 : 60;
@@ -478,11 +483,15 @@
     }
     editing=false;
     digitsInput.style.display='none';
-    digits.style.display='block';
-    digitsHint.style.display='block';
+    if(digitsMM) digitsMM.style.display='inline';
+    if(digitsHint) digitsHint.style.opacity='';
     render();
   }
-  digits.addEventListener('click', enterEdit);
+  if(digitsMM) digitsMM.addEventListener('click', enterEdit);
+  // fallback: clicking anywhere on time also edits
+  if(digitsWrap) digitsWrap.addEventListener('click', e=>{
+    if(e.target===digitsWrap || e.target===digitsSep || e.target===digitsSS) enterEdit();
+  });
   digitsHint.addEventListener('click', enterEdit);
   digitsInput.addEventListener('blur', ()=> exitEdit(true));
   digitsInput.addEventListener('keydown', e=>{
